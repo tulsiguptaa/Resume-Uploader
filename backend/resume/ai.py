@@ -1,8 +1,6 @@
 import os
 import json
-
 from mistralai.client import Mistral
-
 
 client = Mistral(
     api_key=os.getenv("MISTRAL_API_KEY")
@@ -12,31 +10,65 @@ client = Mistral(
 def analyze_resume(resume_text):
 
     prompt = f"""
-You are a resume parser.
+You are a professional resume parser.
 
-Analyze the following resume and return ONLY valid JSON.
+Analyze the resume below and return ONLY valid JSON.
 
-Extract these fields:
+You MUST follow this exact structure:
 
-- name
-- email
-- phone
-- skills
-- education
-- experience
-- projects
-- certifications
+{{
+    "name": "",
+    "email": "",
+    "phone": "",
 
-Rules:
-- If information is not available, use an empty string or empty list.
-- Do not invent information.
-- skills must be a list of strings.
-- education must be a list.
-- experience must be a list.
-- projects must be a list.
-- certifications must be a list.
+    "skills": [],
 
-Resume:
+    "education": [
+        {{
+            "degree": "",
+            "institution": "",
+            "year": "",
+            "description": ""
+        }}
+    ],
+
+    "experience": [
+        {{
+            "role": "",
+            "company": "",
+            "duration": "",
+            "description": ""
+        }}
+    ],
+
+    "projects": [
+        {{
+            "name": "",
+            "tech_stack": [],
+            "description": ""
+        }}
+    ],
+
+    "certifications": []
+}}
+
+RULES:
+
+1. Do not invent information.
+2. If information is missing, use an empty string or empty list.
+3. skills MUST always be a list of strings.
+4. education MUST always be a list of objects using exactly:
+   degree, institution, year, description
+5. experience MUST always be a list of objects using exactly:
+   role, company, duration, description
+6. projects MUST always be a list of objects using exactly:
+   name, tech_stack, description
+7. tech_stack MUST always be a list of strings.
+8. certifications MUST always be a list of strings.
+9. Do not add extra fields.
+10. Return ONLY JSON. Do not include markdown or explanations.
+
+RESUME:
 
 {resume_text}
 """
@@ -56,4 +88,45 @@ Resume:
 
     result = response.choices[0].message.content
 
-    return json.loads(result)
+    data = json.loads(result)
+
+    return validate_resume_data(data)
+
+def validate_resume_data(data):
+
+    required_fields = [
+        "name",
+        "email",
+        "phone",
+        "skills",
+        "education",
+        "experience",
+        "projects",
+        "certifications",
+    ]
+
+    # Make sure all required fields exist
+    for field in required_fields:
+        if field not in data:
+            data[field] = [] if field in [
+                "skills",
+                "education",
+                "experience",
+                "projects",
+                "certifications"
+            ] else ""
+
+    # Make sure list fields are actually lists
+    list_fields = [
+        "skills",
+        "education",
+        "experience",
+        "projects",
+        "certifications"
+    ]
+
+    for field in list_fields:
+        if not isinstance(data[field], list):
+            data[field] = []
+
+    return data

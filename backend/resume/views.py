@@ -2,13 +2,14 @@ import fitz
 import pytesseract
 
 from PIL import Image
+from pdf2image import convert_from_path
+
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 
 from .models import Resume
 from .ai import analyze_resume
-
 
 @api_view(["POST"])
 def upload_resume(request):
@@ -26,12 +27,27 @@ def upload_resume(request):
 
     # PDF
     if file.name.lower().endswith(".pdf"):
-        pdf = fitz.open(resume.file.path)
 
-        for page in pdf:
-            extracted_text += page.get_text()
+    # First try normal PDF text extraction
+       pdf = fitz.open(resume.file.path)
 
-        pdf.close()
+       for page in pdf:
+        extracted_text += page.get_text()
+
+       pdf.close()
+
+    # If no text was found, treat it as a scanned PDF
+       if not extracted_text.strip():
+
+           print("No text found. Running OCR on scanned PDF...")
+
+           pages = convert_from_path(
+            resume.file.path,
+            poppler_path=r"C:\Users\tulsi\Downloads\Release-26.09.0-0\poppler-26.09.0\Library\bin"
+            )
+
+           for page in pages:
+               extracted_text += pytesseract.image_to_string(page)
 
     # Image
     elif file.name.lower().endswith(
@@ -86,3 +102,19 @@ def upload_resume(request):
     },
     status=status.HTTP_201_CREATED
 )
+
+@api_view(["GET"])
+def resume_list(request):
+    resumes = Resume.objects.all().order_by("-uploaded_at")
+
+    data = []
+
+    for resume in resumes:
+        data.append({
+            "id": resume.id,
+            "file": resume.file.url,
+            "uploaded_at": resume.uploaded_at,
+            "extracted_data": resume.extracted_data,
+        })
+
+    return Response(data)
