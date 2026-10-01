@@ -103,3 +103,152 @@ button:disabled {
   margin-top: 18px;
   font-weight: 600;
 }
+
+.result-box {
+  margin-top: 30px;
+  padding: 25px;
+  background: #f8f9fc;
+  border-radius: 12px;
+  text-align: left;
+}
+
+.result-box h2 {
+  margin-top: 0;
+  font-size: 20px;
+}
+
+.result-box pre {
+  white-space: pre-wrap;
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+  color: #444;
+}
+
+
+.results {
+  width: 100%;
+  max-width: 900px;
+  margin: 40px auto;
+}
+
+.results > h1 {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.result-section {
+  background: white;
+  padding: 25px;
+  margin-bottom: 18px;
+  border-radius: 16px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+}
+
+.result-section h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 20px;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.profile-grid div {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.profile-grid span {
+  color: #777;
+  font-size: 13px;
+}
+
+.profile-grid strong {
+  font-size: 15px;
+  word-break: break-word;
+}
+
+.skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.skill {
+  padding: 8px 14px;
+  border-radius: 20px;
+  background: #eef2ff;
+  color: #4f46e5;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.result-section ul {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.result-section li {
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.result-section p {
+  color: #777;
+}
+
+.raw-text {
+  background: white;
+  padding: 20px;
+  border-radius: 16px;
+  margin-bottom: 50px;
+}
+
+.raw-text summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.raw-text pre {
+  margin-top: 20px;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  color: #444;
+}
+
+@media (max-width: 700px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .upload-card {
+    padding: 30px 20px;
+  }
+}
+
+.projects-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.project-card {
+  padding: 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fafafa;
+}
+
+.project-card h3 {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+
+.project-card p {
+  margin-bottom: 0;
+  line-height: 1.6;
+}
