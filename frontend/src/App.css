@@ -573,3 +573,18 @@ button:disabled {
   margin-top: -15px;
   margin-bottom: 25px;
 }
+
+.delete-resume-btn {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 10px;
+  background: #dc2626;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.delete-resume-btn:hover {
+  opacity: 0.9;
+}

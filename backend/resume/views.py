@@ -118,3 +118,44 @@ def resume_list(request):
         })
 
     return Response(data)
+
+
+@api_view(["DELETE"])
+def delete_resume(request, resume_id):
+    try:
+        resume = Resume.objects.get(id=resume_id)
+    except Resume.DoesNotExist:
+        return Response(
+            {"error": "Resume not found"},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    # Delete the uploaded file
+    if resume.file:
+        resume.file.delete(save=False)
+
+    # Delete database record
+    resume.delete()
+
+    return Response(
+        {"message": "Resume deleted successfully"},
+        status=status.HTTP_200_OK
+    )
+
+@api_view(["GET"])
+def resume_detail(request, resume_id):
+    try:
+        resume = Resume.objects.get(id=resume_id)
+    except Resume.DoesNotExist:
+        return Response(
+            {"error": "Resume not found"},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    return Response({
+        "id": resume.id,
+        "file": resume.file.url,
+        "uploaded_at": resume.uploaded_at,
+        "extracted_text": resume.extracted_text,
+        "extracted_data": resume.extracted_data,
+    })

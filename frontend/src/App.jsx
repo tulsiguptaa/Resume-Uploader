@@ -111,29 +111,62 @@ function App() {
       setUploading(false);
     }
   };
+  const handleDeleteResume = async (resumeId) => {
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:8000/api/resume/delete/${resumeId}/`,
+      {
+        method: "DELETE",
+      }
+    );
+
+    const data = await response.json();
+
+    if (response.ok) {
+      setMessage("Resume deleted successfully!");
+
+      // Refresh resume list
+      await fetchPreviousResumes();
+
+      // Clear analysis if deleted resume was selected
+      if (selectedResume?.id === resumeId) {
+        setSelectedResume(null);
+        setResumeData(null);
+        setExtractedText("");
+      }
+    } else {
+      setMessage(data.error || "Failed to delete resume.");
+    }
+  } catch (error) {
+    console.error("Delete error:", error);
+    setMessage("Could not connect to the server.");
+  }
+};
 
   // --------------------------------------------------
   // View a previously uploaded resume
   // --------------------------------------------------
 
-  const handleViewResume = (resume) => {
-    console.log("Selected resume:", resume);
-    console.log("Extracted data:", resume.extracted_data);
+  const handleViewResume = async (resume) => {
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:8000/api/resume/${resume.id}/`
+    );
 
-    // Store selected resume
+    const data = await response.json();
+
+    if (!response.ok) {
+      setMessage(data.error || "Failed to load resume.");
+      return;
+    }
+
     setSelectedResume(resume);
+    setResumeData(data.extracted_data || {});
+    setExtractedText(data.extracted_text || "");
 
-    // Load its extracted data into the analysis section
-    setResumeData(resume.extracted_data || {});
-
-    // We don't have extracted text in the list API
-    setExtractedText("");
-
-    // Scroll to analysis section
     setTimeout(() => {
-      const analysisSection = document.getElementById(
-        "resume-analysis"
-      );
+      const analysisSection =
+        document.getElementById("resume-analysis");
 
       if (analysisSection) {
         analysisSection.scrollIntoView({
@@ -142,7 +175,12 @@ function App() {
         });
       }
     }, 100);
-  };
+
+  } catch (error) {
+    console.error("Failed to load resume:", error);
+    setMessage("Could not connect to the server.");
+  }
+};
 
   // --------------------------------------------------
   // Clear selected resume
@@ -785,6 +823,13 @@ function App() {
                   >
                     View Resume
                   </button>
+                  <button
+  type="button"
+  className="delete-resume-btn"
+  onClick={() => handleDeleteResume(resume.id)}
+>
+  Delete
+</button>
 
                 </div>
 
