@@ -3,13 +3,14 @@ import pytesseract
 
 from PIL import Image
 from pdf2image import convert_from_path
+from django.views.decorators.csrf import csrf_exempt
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import Resume
-from .ai import analyze_resume
+from .models import Resume, InterviewQuestion
+from .ai import analyze_resume, generate_resume_questions
 
 @api_view(["POST"])
 def upload_resume(request):
@@ -159,3 +160,89 @@ def resume_detail(request, resume_id):
         "extracted_text": resume.extracted_text,
         "extracted_data": resume.extracted_data,
     })
+
+@api_view(["POST"])
+@csrf_exempt
+def generate_questions_api(request, resume_id):
+    interview_type = request.data.get("interview_type", "technical")
+    num_questions = request.data.get(
+    "num_questions",
+    5
+)
+    allowed_types = ["technical", "hr", "mock"]
+
+    if interview_type not in allowed_types:
+        return Response(
+        {
+            "error": "Invalid interview type. Choose technical, hr, or mock."
+        },
+        status=status.HTTP_400_BAD_REQUEST
+    )
+    try:
+         num_questions = int(num_questions)
+    except (TypeError, ValueError):
+        return Response(
+        {
+            "error": "num_questions must be a number."
+        },
+        status=status.HTTP_400_BAD_REQUEST
+    )
+
+    if num_questions < 1 or num_questions > 20:
+        return Response(
+        {
+            "error": "num_questions must be between 1 and 20."
+        },
+        status=status.HTTP_400_BAD_REQUEST
+    )
+    try:
+        questions = generate_resume_questions(resume_id, interview_type, num_questions)
+
+        return Response(
+            {
+                "message": "Questions generated successfully",
+                "questions": questions.get("questions", [])
+            },
+            status=status.HTTP_200_OK
+        )
+
+    except Resume.DoesNotExist:
+        return Response(
+            {"error": "Resume not found"},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    except Exception as e:
+        return Response(
+            {"error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(["GET"])
+def get_resume_questions(request, resume_id):
+
+    try:
+        resume = Resume.objects.get(id=resume_id)
+
+        questions = InterviewQuestion.objects.filter(
+            resume=resume
+        ).order_by("created_at")
+
+        data = []
+
+        for question in questions:
+            data.append({
+                "id": question.id,
+                "question": question.question,
+                "category": question.category,
+                "difficulty": question.difficulty,
+                "created_at": question.created_at,
+            })
+
+        return Response(data, status=status.HTTP_200_OK)
+
+    except Resume.DoesNotExist:
+        return Response(
+            {"error": "Resume not found"},
+            status=status.HTTP_404_NOT_FOUND
+        )
