@@ -1,7 +1,7 @@
 import os
 import json
 from mistralai.client import Mistral
-from .models import Resume, InterviewQuestion
+from .models import Resume, InterviewQuestion, InterviewSession
 
 client = Mistral(
     api_key=os.getenv("MISTRAL_API_KEY")
@@ -231,22 +231,11 @@ Rules:
 def generate_resume_questions(resume_id, interview_type, num_questions=5):
 
     resume = Resume.objects.get(id=resume_id)
-    existing_questions = InterviewQuestion.objects.filter(
-    resume=resume
+    session = InterviewSession.objects.create(
+    resume=resume,
+    interview_type=interview_type,
+    num_questions=num_questions
 )
-
-    if existing_questions.exists():
-        return {
-        "questions": [
-            {
-                "id": question.id,
-                "question": question.question,
-                "category": question.category,
-                "difficulty": question.difficulty
-            }
-            for question in existing_questions
-        ]
-    }
 
     resume_data = resume.extracted_data
 
@@ -254,10 +243,14 @@ def generate_resume_questions(resume_id, interview_type, num_questions=5):
 
     for item in questions_data.get("questions", []):
         InterviewQuestion.objects.create(
-            resume=resume,
-            question=item["question"],
-            category=item["category"],
-            difficulty=item["difficulty"]
-        )
+    session=session,
+    question=item["question"],
+    category=item["category"],
+    difficulty=item["difficulty"]
+)
 
-    return questions_data
+    return {
+    "session_id": session.id,
+    "interview_type": session.interview_type,
+    "questions": questions_data.get("questions", [])
+}

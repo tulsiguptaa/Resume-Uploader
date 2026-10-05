@@ -9,7 +9,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import Resume, InterviewQuestion
+from .models import Resume, InterviewQuestion, InterviewSession
 from .ai import analyze_resume, generate_resume_questions
 
 @api_view(["POST"])
@@ -199,12 +199,14 @@ def generate_questions_api(request, resume_id):
         questions = generate_resume_questions(resume_id, interview_type, num_questions)
 
         return Response(
-            {
-                "message": "Questions generated successfully",
-                "questions": questions.get("questions", [])
-            },
-            status=status.HTTP_200_OK
-        )
+    {
+        "message": "Questions generated successfully",
+        "session_id": questions["session_id"],
+        "interview_type": questions["interview_type"],
+        "questions": questions["questions"]
+    },
+    status=status.HTTP_200_OK
+)
 
     except Resume.DoesNotExist:
         return Response(
@@ -219,13 +221,12 @@ def generate_questions_api(request, resume_id):
         )
 
 @api_view(["GET"])
-def get_resume_questions(request, resume_id):
-
+def get_session_questions(request, session_id):
     try:
-        resume = Resume.objects.get(id=resume_id)
+        session = InterviewSession.objects.get(id=session_id)
 
         questions = InterviewQuestion.objects.filter(
-            resume=resume
+            session=session
         ).order_by("created_at")
 
         data = []
@@ -237,6 +238,40 @@ def get_resume_questions(request, resume_id):
                 "category": question.category,
                 "difficulty": question.difficulty,
                 "created_at": question.created_at,
+            })
+
+        return Response(
+            {
+                "session_id": session.id,
+                "interview_type": session.interview_type,
+                "questions": data
+            },
+            status=status.HTTP_200_OK
+        )
+
+    except InterviewSession.DoesNotExist:
+        return Response(
+            {"error": "Interview session not found"},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+@api_view(["GET"])
+def get_resume_sessions(request, resume_id):
+    try:
+        resume = Resume.objects.get(id=resume_id)
+
+        sessions = InterviewSession.objects.filter(
+            resume=resume
+        ).order_by("-created_at")
+
+        data = []
+
+        for session in sessions:
+            data.append({
+                "id": session.id,
+                "interview_type": session.interview_type,
+                "num_questions": session.num_questions,
+                "created_at": session.created_at,
             })
 
         return Response(data, status=status.HTTP_200_OK)
