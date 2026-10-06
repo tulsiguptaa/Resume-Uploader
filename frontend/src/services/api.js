@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:8000/api/resume",
+  baseURL: "http://localhost:8000/api",
   withCredentials: true,
 });
 
@@ -11,7 +11,7 @@ export const generateInterviewQuestions = async (
   numQuestions
 ) => {
   const response = await api.post(
-    `/${resumeId}/generate-questions/`,
+    `/resume/${resumeId}/generate-questions/`,
     {
       interview_type: interviewType,
       num_questions: numQuestions,
@@ -23,7 +23,7 @@ export const generateInterviewQuestions = async (
 
 export const getResumeSessions = async (resumeId) => {
   const response = await api.get(
-    `/${resumeId}/sessions/`
+    `/resume/${resumeId}/sessions/`
   );
 
   return response.data;
@@ -32,6 +32,20 @@ export const getResumeSessions = async (resumeId) => {
 export const getSessionQuestions = async (sessionId) => {
   const response = await api.get(
     `/session/${sessionId}/questions/`
+  );
+
+  return response.data;
+};
+
+export const saveInterviewAnswer = async (
+  questionId,
+  answer
+) => {
+  const response = await api.post(
+    `/question/${questionId}/answer/`,
+    {
+      answer: answer,
+    }
   );
 
   return response.data;

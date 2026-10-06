@@ -39,3 +39,18 @@ class InterviewQuestion(models.Model):
 
     def __str__(self):
         return self.question
+
+
+class InterviewAnswer(models.Model):
+    question = models.OneToOneField(
+        InterviewQuestion,
+        on_delete=models.CASCADE,
+        related_name="answer"
+    )
+
+    answer = models.TextField(blank=True)
+
+    answered_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Answer - Question {self.question.id}"

@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import upload_resume, get_resume_sessions,resume_list, delete_resume, resume_detail, generate_questions_api, get_session_questions
+from .views import upload_resume, save_interview_answer, get_resume_sessions,resume_list, delete_resume, resume_detail, generate_questions_api, get_session_questions
 
 urlpatterns = [
     path("upload/", upload_resume, name="upload_resume"),
@@ -9,4 +9,5 @@ urlpatterns = [
     path("<int:resume_id>/generate-questions/",generate_questions_api),
     path( "session/<int:session_id>/questions/",get_session_questions),
     path("<int:resume_id>/sessions/",get_resume_sessions),
+    path("question/<int:question_id>/answer/",save_interview_answer),
 ]

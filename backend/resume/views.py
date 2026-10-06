@@ -9,7 +9,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import Resume, InterviewQuestion, InterviewSession
+from .models import Resume, InterviewQuestion, InterviewSession, InterviewAnswer
 from .ai import analyze_resume, generate_resume_questions
 
 @api_view(["POST"])
@@ -279,5 +279,40 @@ def get_resume_sessions(request, resume_id):
     except Resume.DoesNotExist:
         return Response(
             {"error": "Resume not found"},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+@api_view(["POST"])
+@csrf_exempt
+def save_interview_answer(request, question_id):
+
+    try:
+        question = InterviewQuestion.objects.get(
+            id=question_id
+        )
+
+        answer_text = request.data.get("answer", "")
+
+        answer, created = InterviewAnswer.objects.update_or_create(
+            question=question,
+            defaults={
+                "answer": answer_text
+            }
+        )
+
+        return Response(
+            {
+                "message": "Answer saved successfully",
+                "answer_id": answer.id,
+                "question_id": question.id,
+                "answer": answer.answer,
+                "created": created
+            },
+            status=status.HTTP_200_OK
+        )
+
+    except InterviewQuestion.DoesNotExist:
+        return Response(
+            {"error": "Question not found"},
             status=status.HTTP_404_NOT_FOUND
         )
