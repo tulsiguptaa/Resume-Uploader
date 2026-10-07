@@ -50,6 +50,16 @@ class InterviewAnswer(models.Model):
 
     answer = models.TextField(blank=True)
 
+    score = models.FloatField(null=True, blank=True)
+
+    feedback = models.TextField(blank=True)
+
+    strengths = models.JSONField(default=list, blank=True)
+
+    improvements = models.JSONField(default=list, blank=True)
+
+    evaluated = models.BooleanField(default=False)
+
     answered_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):

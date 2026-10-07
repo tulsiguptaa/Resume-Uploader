@@ -52,3 +52,25 @@ export const saveInterviewAnswer = async (
 };
 
 export default api;
+
+export const evaluateInterviewAnswer = async (
+  questionId,
+  answer
+) => {
+  const response = await api.post(
+    `/question/${questionId}/evaluate/`,
+    {
+      answer,
+    }
+  );
+
+  return response.data;
+};
+
+export const getInterviewReport = async (sessionId) => {
+  const response = await api.get(
+    `/session/${sessionId}/report/`
+  );
+
+  return response.data;
+};

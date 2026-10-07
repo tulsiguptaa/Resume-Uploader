@@ -4,7 +4,8 @@ import pytesseract
 from PIL import Image
 from pdf2image import convert_from_path
 from django.views.decorators.csrf import csrf_exempt
-
+from .models import InterviewQuestion, InterviewAnswer
+from .services.interview_evaluator import evaluate_answer
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -314,5 +315,144 @@ def save_interview_answer(request, question_id):
     except InterviewQuestion.DoesNotExist:
         return Response(
             {"error": "Question not found"},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+@api_view(["POST"])
+@csrf_exempt
+def evaluate_interview_answer(request, question_id):
+    try:
+        question = InterviewQuestion.objects.get(
+            id=question_id
+        )
+
+        answer_text = request.data.get("answer", "").strip()
+
+        if not answer_text:
+            return Response(
+                {"error": "Answer cannot be empty."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Evaluate using AI
+        evaluation = evaluate_answer(
+            question,
+            answer_text
+        )
+
+        # Save answer + evaluation
+        answer, created = InterviewAnswer.objects.update_or_create(
+            question=question,
+            defaults={
+                "answer": answer_text,
+                "score": evaluation.get("score"),
+                "feedback": evaluation.get("feedback", ""),
+                "strengths": evaluation.get("strengths", []),
+                "improvements": evaluation.get("improvements", []),
+                "evaluated": True,
+            }
+        )
+
+        return Response(
+            {
+                "message": "Answer evaluated successfully",
+                "answer_id": answer.id,
+                "question_id": question.id,
+                "evaluation": {
+                    "score": answer.score,
+                    "feedback": answer.feedback,
+                    "strengths": answer.strengths,
+                    "improvements": answer.improvements,
+                }
+            },
+            status=status.HTTP_200_OK
+        )
+
+    except InterviewQuestion.DoesNotExist:
+        return Response(
+            {"error": "Question not found"},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    except Exception as e:
+        return Response(
+            {"error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(["GET"])
+def get_interview_report(request, session_id):
+
+    try:
+        session = InterviewSession.objects.get(
+            id=session_id
+        )
+
+        questions = InterviewQuestion.objects.filter(
+            session=session
+        ).order_by("created_at")
+
+        report = []
+        total_score = 0
+        evaluated_count = 0
+
+        all_strengths = []
+        all_improvements = []
+
+        for question in questions:
+
+            try:
+                answer = question.answer
+            except InterviewAnswer.DoesNotExist:
+                answer = None
+
+            item = {
+                "question_id": question.id,
+                "question": question.question,
+                "category": question.category,
+                "difficulty": question.difficulty,
+                "answer": answer.answer if answer else "",
+                "score": answer.score if answer else None,
+                "feedback": answer.feedback if answer else "",
+                "strengths": answer.strengths if answer else [],
+                "improvements": answer.improvements if answer else [],
+                "evaluated": answer.evaluated if answer else False,
+            }
+
+            report.append(item)
+
+            if answer and answer.evaluated:
+                total_score += answer.score or 0
+                evaluated_count += 1
+
+                all_strengths.extend(
+                    answer.strengths or []
+                )
+
+                all_improvements.extend(
+                    answer.improvements or []
+                )
+
+        average_score = (
+            round(total_score / evaluated_count, 2)
+            if evaluated_count
+            else 0
+        )
+
+        return Response({
+            "session_id": session.id,
+            "interview_type": session.interview_type,
+            "total_questions": questions.count(),
+            "evaluated_questions": evaluated_count,
+            "total_score": total_score,
+            "average_score": average_score,
+            "strengths": all_strengths,
+            "improvements": all_improvements,
+            "questions": report,
+        })
+
+    except InterviewSession.DoesNotExist:
+        return Response(
+            {"error": "Interview session not found"},
             status=status.HTTP_404_NOT_FOUND
         )
