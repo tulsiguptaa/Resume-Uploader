@@ -8,11 +8,50 @@
 
 .interview-page {
   min-height: 100vh;
-  background: var(--bg-page, #ffffff);
-  color: var(--text-primary, #000000);
-  padding: 100px 32px 60px;
+  --bg-page: transparent;
+  --text-primary: #252c28;
+  --text-secondary: #59645b;
+  --text-muted: #818981;
+  --bg-card: #fff;
+  --bg-subtle: #f1f4ef;
+  --border-soft: #e4e8e1;
+  --border-strong: #c7d0c6;
+  --btn-bg: #38634c;
+  --btn-bg-hover: #274c39;
+  --btn-text: #fff;
+  --bg-input: #fff;
+  background: transparent;
+  color: var(--text-primary);
+  padding: 38px 0 60px;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   transition: background 0.25s ease, color 0.25s ease;
+}
+
+.resume-required {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  margin: 0 auto 34px;
+  padding: 22px 24px;
+  border: 1px solid #dfe7dc;
+  border-radius: 12px;
+  background: #edf3ed;
+}
+
+.resume-required h2 {
+  margin: 8px 0 5px;
+  color: #344b39;
+  font-size: 17px;
+}
+
+.resume-required p {
+  color: #727c72;
+  font-size: 12px;
+}
+
+.resume-required .button {
+  flex-shrink: 0;
 }
 
 /* ================================
@@ -774,7 +813,17 @@
 
 @media (max-width: 600px) {
   .interview-page {
-    padding: 90px 18px 40px;
+    padding: 28px 0 40px;
+  }
+
+  .resume-required {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 19px;
+  }
+
+  .resume-required .button {
+    width: 100%;
   }
 
   .setup-header h1 {

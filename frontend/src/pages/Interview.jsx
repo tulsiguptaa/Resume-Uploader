@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 
 import {
   generateInterviewQuestions,
   getResumeSessions,
-  getSessionQuestions,
   saveInterviewAnswer,
   evaluateInterviewAnswer,
   getInterviewReport,
@@ -56,12 +55,13 @@ const Interview = () => {
   const [error, setError] = useState("");
 
   const [timeLeft, setTimeLeft] = useState(30 * 60);
+  const finishInterviewRef = useRef(null);
 
   // --------------------------------
   // FETCH INTERVIEW HISTORY
   // --------------------------------
 
-  const fetchSessions = async () => {
+  const fetchSessions = useCallback(async () => {
     if (!resumeId) return;
 
     try {
@@ -69,11 +69,33 @@ const Interview = () => {
       setSessions(data || []);
     } catch (err) {
       console.error("Failed to fetch sessions:", err);
+      setError(
+        err.response?.data?.error ||
+          "Could not load your previous interview sessions."
+      );
     }
-  };
+  }, [resumeId]);
 
   useEffect(() => {
-    fetchSessions();
+    if (!resumeId) return undefined;
+
+    let active = true;
+    getResumeSessions(resumeId)
+      .then((data) => {
+        if (active) setSessions(data || []);
+      })
+      .catch((err) => {
+        if (active) {
+          setError(
+            err.response?.data?.error ||
+              "Could not load your previous interview sessions."
+          );
+        }
+      });
+
+    return () => {
+      active = false;
+    };
   }, [resumeId]);
 
   // --------------------------------
@@ -86,7 +108,7 @@ const Interview = () => {
     }
 
     if (timeLeft <= 0) {
-      finishInterview();
+      finishInterviewRef.current?.();
       return;
     }
 
@@ -164,27 +186,16 @@ const Interview = () => {
       setLoading(true);
       setError("");
 
-      const data = await getSessionQuestions(id);
-
-      setQuestions(data.questions || []);
+      const data = await getInterviewReport(id);
       setSessionId(data.session_id);
-
       setInterviewType(data.interview_type);
-
-      setCurrentQuestion(0);
-      setAnswers({});
-
-      setEvaluation(null);
-      setReport(null);
-
-      setInterviewStarted(true);
-      setInterviewFinished(false);
-
-      setTimeLeft(30 * 60);
+      setReport(data);
+      setInterviewStarted(false);
+      setInterviewFinished(true);
     } catch (err) {
       setError(
         err.response?.data?.error ||
-          "Failed to load interview session."
+          "Failed to load the interview report."
       );
     } finally {
       setLoading(false);
@@ -427,6 +438,10 @@ const Interview = () => {
       setLoadingReport(false);
     }
   };
+
+  useEffect(() => {
+    finishInterviewRef.current = finishInterview;
+  });
 
   // --------------------------------
   // RESTART
@@ -1148,6 +1163,19 @@ const Interview = () => {
           </div>
         )}
 
+        {!resumeId && (
+          <div className="resume-required">
+            <div>
+              <span className="panel-kicker">FIRST, CHOOSE A RESUME</span>
+              <h2>Personalized practice starts with your experience.</h2>
+              <p>Upload or select a saved resume to generate relevant interview questions.</p>
+            </div>
+            <Link className="button button-primary" to="/resume-upload#resumes">
+              Go to resume studio <span aria-hidden="true">↗</span>
+            </Link>
+          </div>
+        )}
+
         {/* INTERVIEW TYPE */}
 
         <section className="setup-section">
@@ -1285,7 +1313,7 @@ const Interview = () => {
         <button
           className="start-btn"
           onClick={startInterview}
-          disabled={loading}
+          disabled={loading || !resumeId}
         >
           {loading ? (
             <>
